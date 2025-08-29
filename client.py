@@ -10,7 +10,7 @@ class Launch:
     id: str
     launch_time: datetime
     payload_ids: List[str]
-
+    total_payload_mass_kg: Optional[float] = None
 
 class SpaceXClient:
     def __init__(self, base_url: str = 'https://api.spacexdata.com/v4'):
@@ -87,11 +87,11 @@ class SpaceXClient:
         - Returns the heaviest launch in the period, an object of Launch class or None
         - Relies on `populate` to include payloads with { id, mass_kg }
         - If any payload happens to be just a string ID, it counts as 0 kg
+        - The Launch object returned has an extra attribute `total_payload_mass_kg` with the total mass
         """
         if start_date and end_date and start_date > end_date:
             return None
 
-        # Build an inclusive range on full UTC days using date_unix
         date_unix_filter = {}
         if start_date:
             start_utc = datetime(start_date.year, start_date.month, start_date.day, tzinfo=timezone.utc)
@@ -103,7 +103,6 @@ class SpaceXClient:
 
         query_body = {"date_unix": date_unix_filter} if date_unix_filter else {}
 
-        # Query launches with populated payloads (id, mass_kg); pagination=false => API returns a LIST
         resp = requests.post(
             url=self._url("launches/query"),
             json={
@@ -123,7 +122,7 @@ class SpaceXClient:
             return None
 
         heaviest_doc = None
-        heaviest_mass = 0
+        heaviest_mass = None
 
         for launch in launches:
             print(launch)
@@ -131,9 +130,9 @@ class SpaceXClient:
             total_mass = 0.0
             for p in (launch.get("payloads") or []):
                 if isinstance(p, dict):
-                    total_mass += float(p.get("mass_kg") or 0.0)
+                    total_mass += float(p.get("mass_kg") or 0.0) # None or missing will be 0.0 kg (this is an assumption)
 
-            if total_mass >= heaviest_mass:
+            if total_mass > heaviest_mass or heaviest_mass is None:
                 heaviest_mass = total_mass
                 heaviest_doc = launch
 
@@ -146,6 +145,6 @@ class SpaceXClient:
             (p["id"] if isinstance(p, dict) else p)
             for p in (heaviest_doc.get("payloads") or [])
         ]
-        launch = Launch(id=heaviest_doc["id"], launch_time=launch_time, payload_ids=payload_ids)
+        launch = Launch(id=heaviest_doc["id"], launch_time=launch_time, payload_ids=payload_ids, total_payload_mass_kg=heaviest_mass)
         return launch
         
