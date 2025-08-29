@@ -112,8 +112,7 @@ class SpaceXClient:
                     "populate": [{"path": "payloads", "select": ["id", "mass_kg"]}],
                     "pagination": False
                 }
-            },
-            timeout=20
+            }
         )
         resp.raise_for_status()
         launches = resp.json().get("docs", [])
