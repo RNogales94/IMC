@@ -125,14 +125,13 @@ class SpaceXClient:
         heaviest_mass = None
 
         for launch in launches:
-            print(launch)
             # Sum payload masses; populated entries are dicts with mass_kg
             total_mass = 0.0
             for p in (launch.get("payloads") or []):
                 if isinstance(p, dict):
                     total_mass += float(p.get("mass_kg") or 0.0) # None or missing will be 0.0 kg (this is an assumption)
 
-            if total_mass > heaviest_mass or heaviest_mass is None:
+            if heaviest_mass is None or total_mass > heaviest_mass:
                 heaviest_mass = total_mass
                 heaviest_doc = launch
 
