@@ -128,7 +128,7 @@ class SpaceXClient:
             total_mass = 0.0
             for p in (launch.get("payloads") or []):
                 if isinstance(p, dict):
-                    total_mass += float(p.get("mass_kg") or 0.0) # None or missing will be 0.0 kg (this is an assumption)
+                    total_mass += float(p.get("mass_kg") or 0.0) # None or missing will be 0.0 kg (this is an assumption), check edge cases launchs (2022-07-15 or 2022-12-05)
 
             if heaviest_mass is None or total_mass > heaviest_mass:
                 heaviest_mass = total_mass
